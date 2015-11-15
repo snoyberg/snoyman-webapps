@@ -1,0 +1,5 @@
+- vhost: www.yesodweb.com
+  dir: /app/yesodweb.com
+  exe: yesodweb
+  args:
+  - production

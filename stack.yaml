@@ -1,7 +1,10 @@
 resolver: lts-3.13
 
+docker:
+  enable: true
+
 packages:
-- warp-vhost
+- webapps
 - sites/dollarversusshekel
 - sites/haskellers
 - sites/luach
@@ -11,7 +14,7 @@ packages:
 
 image:
   container:
-    name: snoyberg/webapps
+    name: snoyberg/snoyman-webapps
     base: fpco/stack-run
     add:
       sites/yesodweb.com/config: /app/yesodweb.com/config
@@ -24,3 +27,5 @@ image:
 
       sites/whosawthatcoming/config: /app/whosawthatcoming/config
       sites/whosawthatcoming/static: /app/whosawthatcoming/static
+
+      webapps/config: /app/webapps/config
