@@ -1,0 +1,23 @@
+resolver: lts-3.13
+
+packages:
+- warp-vhost
+- sites/dollarversusshekel
+- sites/haskellers
+- sites/luach
+- sites/snoyman.com
+- sites/whosawthatcoming
+- sites/yesodweb.com
+
+image:
+  container:
+    name: snoyberg/webapps
+    base: fpco/stack-run
+    add:
+      sites/yesodweb.com/config: /app/yesodweb.com/config
+      sites/yesodweb.com/static: /app/yesodweb.com/static
+
+      sites/haskellers/config: /app/haskellers/config
+      sites/haskellers/static: /app/haskellers/static
+
+      sites/luach/static: /app/luach/static

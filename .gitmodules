@@ -1,0 +1,21 @@
+[submodule "dollarversusshekel"]
+	path = sites/dollarversusshekel
+	url = https://bitbucket.org/snoyberg/dollarversusshekel
+[submodule "haskellers"]
+	path = sites/haskellers
+	url = https://github.com/snoyberg/haskellers
+[submodule "luach"]
+	path = sites/luach
+	url = https://github.com/snoyberg/luach
+[submodule "snoyman.com"]
+	path = sites/snoyman.com
+	url = https://github.com/snoyberg/snoyman.com
+[submodule "whosawthatcoming"]
+	path = sites/whosawthatcoming
+	url = https://github.com/snoyberg/whosawthatcoming
+[submodule "yesodweb.com"]
+	path = sites/yesodweb.com
+	url = https://github.com/yesodweb/yesodweb.com
+[submodule "warp-vhost"]
+	path = warp-vhost
+	url = https://github.com/snoyberg/warp-vhost
