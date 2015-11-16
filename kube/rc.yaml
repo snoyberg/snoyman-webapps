@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+    name: snoyman-webapps
+    labels:
+        name: snoyman-webapps
+spec:
+  replicas: 1
+  selector:
+    name: snoyman-webapps
+  template:
+    metadata:
+        labels:
+            name: snoyman-webapps
+    spec:
+        volumes:
+        - name: haskellers-postgresql-volume
+          secret:
+              secretName: haskellers-postgresql-secret
+        - name: luach-connstr-volume
+          secret:
+              secretName: luach-connstr-secret
+        - name: whosawthatcoming-postgresql-volume
+          secret:
+              secretName: whosawthatcoming-postgresql-secret
+        containers:
+        - name: webapps
+          image: snoyberg/snoyman-webapps:latest
+          command: ["webapps"]
+          workingDir: /app/webapps
+          ports:
+          - name: webapps
+            containerPort: 3000
+          env:
+          - name: PORT
+            value: "3000"
+          volumeMounts:
+          - name: haskellers-postgresql-volume
+            readOnly: true
+            mountPath: /app/haskellers/config/db
+          - name: luach-connstr-volume
+            readOnly: true
+            mountPath: /app/luach/config
+          - name: whosawthatcoming-postgresql-volume
+            readOnly: true
+            mountPath: /app/whosawthatcoming/config/db
