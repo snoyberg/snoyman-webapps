@@ -23,6 +23,9 @@ image:
       sites/haskellers/config: /app/haskellers/config
       sites/haskellers/static: /app/haskellers/static
 
+      sites/whosawthatcoming/config: /app/whosawthatcoming/config
+      sites/whosawthatcoming/static: /app/whosawthatcoming/static
+
       sites/luach/static: /app/luach/static
 
       sites/whosawthatcoming/config: /app/whosawthatcoming/config

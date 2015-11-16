@@ -3,3 +3,28 @@
   exe: yesodweb
   args:
   - production
+- vhost: www.dollarversusshekel.info
+  dir: /app
+  exe: dollarversusshekel
+  args:
+  - production
+- vhost: www.haskellers.com
+  dir: /app/haskellers
+  exe: haskellers
+  args:
+  - production
+- vhost: luach.snoyman.com
+  dir: /app/luach
+  exe: luach
+  args:
+  - production
+- vhost: www.snoyman.com
+  dir: /app
+  exe: snoymancom
+  args:
+  - production
+- vhost: www.whosawthatcoming.com
+  dir: /app/whosawthatcoming
+  exe: whosawthatcoming
+  args:
+  - production
