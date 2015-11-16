@@ -1,6 +1,0 @@
-resolver: lts-3.13
-
-image:
-  container:
-    name: snoyberg/warp-vhost
-    base: fpco/stack-run
