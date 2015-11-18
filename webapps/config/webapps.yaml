@@ -1,3 +1,4 @@
+apps:
 - vhost: www.yesodweb.com
   dir: /app/yesodweb.com
   exe: yesodweb
@@ -28,3 +29,21 @@
   exe: whosawthatcoming
   args:
   - production
+
+redirects:
+- src: yesodweb.com
+  dst: www.yesodweb.com
+- src: yesodweb.org
+  dst: www.yesodweb.com
+- src: www.yesodweb.org
+  dst: www.yesodweb.com
+- src: dollarversusshekel.info
+  dst: www.dollarversusshekel.info
+- src: haskellers.com
+  dst: www.haskellers.com
+- src: snoyman.com
+  dst: www.snoyman.com
+- src: michael.snoyman.com
+  dst: www.snoyman.com
+- src: whosawthatcoming.com
+  dst: www.whosawthatcoming.com

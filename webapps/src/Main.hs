@@ -14,8 +14,8 @@ import           Network.HTTP.Client       (defaultManagerSettings, newManager)
 import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
                                             waiProxyTo)
-import           Network.HTTP.Types        (status404)
-import           Network.Wai               (requestHeaderHost, responseLBS)
+import           Network.HTTP.Types        (status404, status307)
+import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString)
 import           Network.Wai.Handler.Warp  (run)
 import           Text.Read                 (readMaybe)
 import Data.Aeson (FromJSON (..), (.:), withObject)
@@ -26,6 +26,17 @@ import Control.Exception (throwIO)
 import Control.Concurrent.Async (Concurrently (..))
 import System.Environment (getEnvironment)
 import System.Process (createProcess, proc, env, cwd, waitForProcess)
+import qualified Data.ByteString as S
+
+data Config port = Config
+    { configApps :: ![App port]
+    , configRedirects :: ![Redirect]
+    }
+    deriving (Show, Functor, Foldable, Traversable)
+instance port ~ () => FromJSON (Config port) where
+    parseJSON = withObject "Config" $ \o -> Config
+        <$> o .: "apps"
+        <*> o .: "redirects"
 
 data App port = App
     { appVhost :: !String
@@ -43,6 +54,16 @@ instance port ~ () => FromJSON (App port) where
         <*> o .: "exe"
         <*> o .: "args"
 
+data Redirect = Redirect
+    { redSrc :: !String
+    , redDst :: !String
+    }
+    deriving Show
+instance FromJSON Redirect where
+    parseJSON = withObject "Redirect" $ \o -> Redirect
+        <$> o .: "src"
+        <*> o .: "dst"
+
 getRandomPort :: IO Int
 getRandomPort = do
     (port, socket) <- bindRandomPortTCP "*"
@@ -51,9 +72,9 @@ getRandomPort = do
 
 main :: IO ()
 main = do
-    apps <- Yaml.decodeFileEither "config/webapps.yaml"
+    cfg  <- Yaml.decodeFileEither "config/webapps.yaml"
         >>= either throwIO return
-        >>= mapM (mapM $ const getRandomPort)
+        >>= mapM (const getRandomPort)
     env0 <- getEnvironment
     let env1 = filter (\(k, _) -> k /= "PORT" && k /= "APPROOT") env0
     port <-
@@ -65,22 +86,41 @@ main = do
                     Just port -> return port
     runConcurrently $ foldr
         (\app c -> Concurrently (runWebApp env1 app) *> c)
-        (Concurrently $ runProxy port apps)
-        apps
+        (Concurrently $ runProxy port cfg)
+        (configApps cfg)
 
-runProxy :: Int -> [App Int] -> IO ()
-runProxy proxyPort apps = do
+runProxy :: Int -> Config Int -> IO ()
+runProxy proxyPort cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
     run proxyPort (app manager)
   where
-    vhosts = HM.fromList $ map toPair apps
-    toPair App {..} = (T.encodeUtf8 $ T.pack appVhost, appPort)
+    vhosts = HM.fromList $ map toPair (configApps cfg)
+                        ++ map redToPair (configRedirects cfg)
+    toPair App {..} = (T.encodeUtf8 $ T.pack appVhost, Left appPort)
 
     dispatch req = return $ fromMaybe defRes $ do
         vhost <- requestHeaderHost req
-        fmap (WPRProxyDest . ProxyDest "localhost") $ HM.lookup vhost vhosts
+        res <- HM.lookup vhost vhosts
+        return $ case res of
+            Left port -> WPRProxyDest $ ProxyDest "localhost" port
+            Right host -> WPRResponse $ responseLBS status307
+                [ ("Location", getLocation host req)
+                ]
+                "Redirecting"
     defRes = WPRResponse $ responseLBS status404 [] "Host not found"
+
+    getLocation host req = S.concat
+        [ "http://"
+        , host
+        , rawPathInfo req
+        , rawQueryString req
+        ]
+
+    redToPair (Redirect src dst) =
+        ( T.encodeUtf8 $ T.pack src
+        , Right $ T.encodeUtf8 $ T.pack dst
+        )
 
     app = waiProxyTo dispatch defaultOnExc
 
