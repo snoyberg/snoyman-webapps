@@ -37,6 +37,12 @@ redirects:
   dst: www.yesodweb.com
 - src: www.yesodweb.org
   dst: www.yesodweb.com
+- src: docs.yesodweb.com
+  dst: www.yesodweb.com
+- src: old.yesodweb.com
+  dst: www.yesodweb.com
+- src: beta.yesodweb.com
+  dst: www.yesodweb.com
 - src: dollarversusshekel.info
   dst: www.dollarversusshekel.info
 - src: haskellers.com
