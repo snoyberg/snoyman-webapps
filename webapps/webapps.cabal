@@ -29,3 +29,4 @@ executable webapps
                      , network
                      , unordered-containers
                      , http-client
+                     , wai-extra

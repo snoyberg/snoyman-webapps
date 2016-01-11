@@ -17,6 +17,7 @@ import           Network.HTTP.ReverseProxy (ProxyDest (..),
 import           Network.HTTP.Types        (status404, status307)
 import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString)
 import           Network.Wai.Handler.Warp  (run)
+import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
 import Data.Aeson (FromJSON (..), (.:), withObject)
 import Data.Streaming.Network (bindRandomPortTCP)
@@ -93,7 +94,7 @@ runProxy :: Int -> Config Int -> IO ()
 runProxy proxyPort cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
-    run proxyPort (app manager)
+    run proxyPort (middleware $ app manager)
   where
     vhosts = HM.fromList $ map toPair (configApps cfg)
                         ++ map redToPair (configRedirects cfg)
@@ -123,6 +124,8 @@ runProxy proxyPort cfg = do
         )
 
     app = waiProxyTo dispatch defaultOnExc
+
+    middleware = gzip def
 
 runWebApp :: [(String, String)] -> App Int -> IO ()
 runWebApp env0 App {..} = do
