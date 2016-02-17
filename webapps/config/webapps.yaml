@@ -1,34 +1,43 @@
+index-vhost: webapps.snoyman.com
+title: Michael Snoyman's webapps
+
 apps:
 - vhost: www.yesodweb.com
   dir: /app/yesodweb.com
   exe: yesodweb
   args:
   - production
+  desc: Yesod Web Framework homepage
 - vhost: www.dollarversusshekel.info
   dir: /app
   exe: dollarversusshekel
   args:
   - production
+  desc: Exchange rate comparison (USD and ILS)
 - vhost: www.haskellers.com
   dir: /app/haskellers
   exe: haskellers
   args:
   - production
+  desc: Haskellers
 - vhost: luach.snoyman.com
   dir: /app/luach
   exe: luach
   args:
   - production
+  desc: Luach- English and Hebrew calendar reminders
 - vhost: www.snoyman.com
   dir: /app
   exe: snoymancom
   args:
   - production
+  desc: Michael Snoyman's personal homepage
 - vhost: www.whosawthatcoming.com
   dir: /app/whosawthatcoming
   exe: whosawthatcoming
   args:
   - production
+  desc: Who Saw That Coming- predict the future
 
 redirects:
 - src: yesodweb.com

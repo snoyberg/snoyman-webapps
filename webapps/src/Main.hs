@@ -14,8 +14,8 @@ import           Network.HTTP.Client       (defaultManagerSettings, newManager)
 import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
                                             waiProxyTo)
-import           Network.HTTP.Types        (status404, status307)
-import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString)
+import           Network.HTTP.Types        (status200, status404, status307)
+import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder)
 import           Network.Wai.Handler.Warp  (run)
 import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
@@ -28,16 +28,24 @@ import Control.Concurrent.Async (Concurrently (..))
 import System.Environment (getEnvironment)
 import System.Process (createProcess, proc, env, cwd, waitForProcess)
 import qualified Data.ByteString as S
+import Lucid
+import Lucid.Html5
+import Data.Functor.Identity (runIdentity)
+import Control.Monad (forM_)
 
 data Config port = Config
     { configApps :: ![App port]
     , configRedirects :: ![Redirect]
+    , configIndexVhost :: !String
+    , configTitle :: !T.Text
     }
     deriving (Show, Functor, Foldable, Traversable)
 instance port ~ () => FromJSON (Config port) where
     parseJSON = withObject "Config" $ \o -> Config
         <$> o .: "apps"
         <*> o .: "redirects"
+        <*> o .: "index-vhost"
+        <*> o .: "title"
 
 data App port = App
     { appVhost :: !String
@@ -45,6 +53,7 @@ data App port = App
     , appDir :: !FilePath
     , appExe :: !FilePath
     , appArgs :: ![String]
+    , appDesc :: !T.Text
     }
     deriving (Show, Functor, Foldable, Traversable)
 instance port ~ () => FromJSON (App port) where
@@ -54,6 +63,7 @@ instance port ~ () => FromJSON (App port) where
         <*> o .: "dir"
         <*> o .: "exe"
         <*> o .: "args"
+        <*> o .: "desc"
 
 data Redirect = Redirect
     { redSrc :: !String
@@ -90,25 +100,32 @@ main = do
         (Concurrently $ runProxy port cfg)
         (configApps cfg)
 
+data Dest = Index | Port !Int | Host !S.ByteString
+
 runProxy :: Int -> Config Int -> IO ()
 runProxy proxyPort cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
     run proxyPort (middleware $ app manager)
   where
-    vhosts = HM.fromList $ map toPair (configApps cfg)
+    vhosts = HM.insert (T.encodeUtf8 $ T.pack $ configIndexVhost cfg) Index
+           $ HM.fromList $ map toPair (configApps cfg)
                         ++ map redToPair (configRedirects cfg)
-    toPair App {..} = (T.encodeUtf8 $ T.pack appVhost, Left appPort)
+    toPair App {..} = (T.encodeUtf8 $ T.pack appVhost, Port appPort)
 
     dispatch req = return $ fromMaybe defRes $ do
         vhost <- requestHeaderHost req
         res <- HM.lookup vhost vhosts
         return $ case res of
-            Left port -> WPRProxyDest $ ProxyDest "localhost" port
-            Right host -> WPRResponse $ responseLBS status307
+            Port port -> WPRProxyDest $ ProxyDest "localhost" port
+            Host host -> WPRResponse $ responseLBS status307
                 [ ("Location", getLocation host req)
                 ]
                 "Redirecting"
+            Index -> WPRResponse $ responseBuilder
+                status200
+                [("Content-Type", "text/html; charset=utf-8")]
+                (runIdentity $ execHtmlT $ indexHtml cfg)
     defRes = WPRResponse $ responseLBS status404 [] "Host not found"
 
     getLocation host req = S.concat
@@ -120,12 +137,28 @@ runProxy proxyPort cfg = do
 
     redToPair (Redirect src dst) =
         ( T.encodeUtf8 $ T.pack src
-        , Right $ T.encodeUtf8 $ T.pack dst
+        , Host $ T.encodeUtf8 $ T.pack dst
         )
 
     app = waiProxyTo dispatch defaultOnExc
 
     middleware = gzip def
+
+indexHtml :: Config a -> Html ()
+indexHtml cfg =
+    doctypehtml_ $ do
+        head_ $ do
+            title_ $ toHtml $ configTitle cfg
+        body_ $ do
+            h1_ $ toHtml $ configTitle cfg
+            ul_ $ do
+                forM_ (configApps cfg) $ \app -> do
+                    let url = T.pack $ concat
+                            [ "http://"
+                            , appVhost app
+                            , "/"
+                            ]
+                    li_ $ a_ [href_ url] $ toHtml $ appDesc app
 
 runWebApp :: [(String, String)] -> App Int -> IO ()
 runWebApp env0 App {..} = do

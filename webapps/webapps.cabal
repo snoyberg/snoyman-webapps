@@ -30,3 +30,4 @@ executable webapps
                      , unordered-containers
                      , http-client
                      , wai-extra
+                     , lucid
