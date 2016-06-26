@@ -15,7 +15,7 @@ packages:
 image:
   container:
     name: snoyberg/snoyman-webapps
-    base: fpco/stack-run
+    base: fpco/stack-run:lts-3.0
     add:
       sites/yesodweb.com/config: /app/yesodweb.com/config
       sites/yesodweb.com/static: /app/yesodweb.com/static
