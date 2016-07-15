@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: snoyman-webapps
   labels:
-    name: snoyman-webapps
+    app: snoyman-webapps
 spec:
   type: LoadBalancer
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 80
     targetPort: webapps
   selector:
-    name: snoyman-webapps
+    app: snoyman-webapps

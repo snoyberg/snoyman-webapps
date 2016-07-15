@@ -1,17 +1,15 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
     name: snoyman-webapps
     labels:
-        name: snoyman-webapps
+        app: snoyman-webapps
 spec:
   replicas: 1
-  selector:
-    name: snoyman-webapps
   template:
     metadata:
         labels:
-            name: snoyman-webapps
+            app: snoyman-webapps
     spec:
         volumes:
         - name: haskellers-postgresql-volume
