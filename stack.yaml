@@ -11,6 +11,8 @@ packages:
 - sites/snoyman.com
 - sites/whosawthatcoming
 - sites/yesodweb.com
+- location: vendor/gitrev
+  extra-dep: true
 
 image:
   container:

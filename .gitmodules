@@ -19,3 +19,6 @@
 [submodule "warp-vhost"]
 	path = warp-vhost
 	url = https://github.com/snoyberg/warp-vhost
+[submodule "vendor/gitrev"]
+	path = vendor/gitrev
+	url = https://github.com/snoyberg/gitrev
