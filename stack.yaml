@@ -1,4 +1,4 @@
-resolver: lts-3.13
+resolver: lts-6.11
 
 docker:
   enable: true
@@ -15,7 +15,7 @@ packages:
 image:
   container:
     name: snoyberg/snoyman-webapps
-    base: fpco/stack-run:lts-3.0
+    base: fpco/stack-run:lts-6.0
     add:
       sites/yesodweb.com/config: /app/yesodweb.com/config
       sites/yesodweb.com/static: /app/yesodweb.com/static
