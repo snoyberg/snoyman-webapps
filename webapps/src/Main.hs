@@ -4,12 +4,15 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Main (main) where
 
+import           Control.Monad             (when)
 import qualified Data.HashMap.Strict       as HM
 import           Data.Maybe                (fromMaybe)
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
+import           Development.GitRev        (gitHash, gitDirty)
 import           Network.HTTP.Client       (defaultManagerSettings, newManager)
 import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
@@ -22,7 +25,7 @@ import           Text.Read                 (readMaybe)
 import Data.Aeson (FromJSON (..), (.:), withObject)
 import Data.Streaming.Network (bindRandomPortTCP)
 import qualified Data.Yaml as Yaml
-import Network.Socket (sClose)
+import Network.Socket (close)
 import Control.Exception (throwIO)
 import Control.Concurrent.Async (Concurrently (..))
 import System.Environment (getEnvironment)
@@ -78,7 +81,7 @@ instance FromJSON Redirect where
 getRandomPort :: IO Int
 getRandomPort = do
     (port, socket) <- bindRandomPortTCP "*"
-    sClose socket
+    close socket
     return port
 
 main :: IO ()
@@ -151,6 +154,12 @@ indexHtml cfg =
             title_ $ toHtml $ configTitle cfg
         body_ $ do
             h1_ $ toHtml $ configTitle cfg
+            p_ $ do
+                "Git SHA: "
+                b_ $gitHash
+                when $gitDirty $ do
+                    " "
+                    i_ "dirty"
             ul_ $ do
                 forM_ (configApps cfg) $ \app -> do
                     let url = T.pack $ concat
