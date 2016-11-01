@@ -177,4 +177,10 @@ runWebApp env0 App {..} = do
                      : env0
         , cwd = Just appDir
         }
-    waitForProcess ph >>= throwIO
+    ec <- waitForProcess ph
+    error $ concat
+        [ "Application on "
+        , appVhost
+        , " exited with "
+        , show ec
+        ]
