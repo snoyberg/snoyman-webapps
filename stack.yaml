@@ -1,8 +1,5 @@
 resolver: lts-6.11
 
-docker:
-  enable: true
-
 packages:
 - webapps
 - sites/dollarversusshekel
