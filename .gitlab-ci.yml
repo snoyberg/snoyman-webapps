@@ -56,5 +56,5 @@ deploy:
     - docker push "$PROD_DEPLOYMENT_IMAGE"
     - docker tag "$DEPLOYMENT_IMAGE" "snoyberg/snoyman-webapps:latest"
     - docker push "snoyberg/snoyman-webapps:latest"
-    - kubectl set image "deployment/$DEPLOYMENT_NAME" snoyman-webapps="$PROD_DEPLOYMENT_IMAGE"
+    - kubectl set image "deployment/$DEPLOYMENT_NAME" webapps="$PROD_DEPLOYMENT_IMAGE"
     - kubectl rollout status "deployment/$DEPLOYMENT_NAME"
