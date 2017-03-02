@@ -12,7 +12,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/snoyberg/warp-letsencrypt
-    commit: 138426715f9666fd2d3c5a16c37004f449efac85
+    commit: fb4316886558d9168d559c8ca508701ef65aa3ea
   extra-dep: true
 
 image:
