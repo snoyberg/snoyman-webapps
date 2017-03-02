@@ -1,3 +1,3 @@
-FROM lts-6.30
+FROM fpco/stack-run:lts-6.30
 
 RUN apt-get update && apt-get install -y letsencrypt
