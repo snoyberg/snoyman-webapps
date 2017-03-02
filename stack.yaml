@@ -1,4 +1,4 @@
-resolver: snoyman-webapps-base
+resolver: lts-6.30
 
 packages:
 - webapps
@@ -18,7 +18,7 @@ packages:
 image:
   container:
     name: snoyberg/snoyman-webapps
-    base: fpco/stack-run:lts-6.4
+    base: snoyman-webapps-base
     add:
       sites/yesodweb.com/config: /app/yesodweb.com/config
       sites/yesodweb.com/static: /app/yesodweb.com/static
