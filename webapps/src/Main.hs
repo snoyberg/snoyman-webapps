@@ -8,6 +8,7 @@
 module Main (main) where
 
 import           Control.Monad             (when)
+import           Control.Concurrent        (threadDelay)
 import qualified Data.HashMap.Strict       as HM
 import           Data.Maybe                (fromMaybe)
 import qualified Data.Text                 as T
@@ -126,6 +127,7 @@ runProxy proxyPort proxyPortSSL cfg = do
       , lesEmailAddress = "michael@snoyman.com"
       , lesDomains = configDomains cfg
       , lesApp = middleware $ app manager
+      , lesBeforeSecure = threadDelay $ 1000 * 1000 * 30 -- thirty seconds to make Kube happy with the new deployment
       }
   where
     vhosts = HM.insert (T.encodeUtf8 $ T.pack $ configIndexVhost cfg) Index
