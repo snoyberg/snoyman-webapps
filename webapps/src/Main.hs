@@ -19,7 +19,7 @@ import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             waiProxyTo)
 import           Network.HTTP.Types        (status200, status404, status307)
 import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder)
-import           Network.Wai.Handler.Warp  (run)
+import           Network.Wai.Handler.Warp  (setPort, defaultSettings)
 import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
 import Data.Aeson (FromJSON (..), (.:), withObject)
@@ -35,6 +35,7 @@ import Lucid
 import Lucid.Html5
 import Data.Functor.Identity (runIdentity)
 import Control.Monad (forM_)
+import Warp.LetsEncrypt
 
 data Config port = Config
     { configApps :: ![App port]
@@ -49,6 +50,9 @@ instance port ~ () => FromJSON (Config port) where
         <*> o .: "redirects"
         <*> o .: "index-vhost"
         <*> o .: "title"
+
+configDomains :: Config port -> [T.Text]
+configDomains cfg = map T.pack $ configIndexVhost cfg : map appVhost (configApps cfg)
 
 data App port = App
     { appVhost :: !String
@@ -98,18 +102,31 @@ main = do
                 case readMaybe sport of
                     Nothing -> error $ "Invalid port: " ++ sport
                     Just port -> return port
+    portssl <-
+        case lookup "PORTSSL" env0 of
+            Nothing -> error "No PORTSSL environment variable"
+            Just sport ->
+                case readMaybe sport of
+                    Nothing -> error $ "Invalid port (SSL): " ++ sport
+                    Just portssl -> return portssl
     runConcurrently $ foldr
         (\app c -> Concurrently (runWebApp env1 app) *> c)
-        (Concurrently $ runProxy port cfg)
+        (Concurrently $ runProxy port portssl cfg)
         (configApps cfg)
 
 data Dest = Index | Port !Int | Host !S.ByteString
 
-runProxy :: Int -> Config Int -> IO ()
-runProxy proxyPort cfg = do
+runProxy :: Int -> Int -> Config Int -> IO ()
+runProxy proxyPort proxyPortSSL cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
-    run proxyPort (middleware $ app manager)
+    runLetsEncrypt LetsEncryptSettings
+      { lesInsecureSettings = setPort proxyPort defaultSettings
+      , lesSecureSettings = setPort proxyPortSSL defaultSettings
+      , lesEmailAddress = "michael@snoyman.com"
+      , lesDomains = configDomains cfg
+      , lesApp = middleware $ app manager
+      }
   where
     vhosts = HM.insert (T.encodeUtf8 $ T.pack $ configIndexVhost cfg) Index
            $ HM.fromList $ map toPair (configApps cfg)

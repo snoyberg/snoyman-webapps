@@ -1,4 +1,4 @@
-resolver: lts-6.30
+resolver: snoyman-webapps-base
 
 packages:
 - webapps
@@ -9,6 +9,10 @@ packages:
 - sites/whosawthatcoming
 - sites/yesodweb.com
 - location: vendor/gitrev
+  extra-dep: true
+- location:
+    git: https://github.com/snoyberg/warp-letsencrypt
+    commit: 2eb326f3258b26020069c836d46ac23fcde620b3
   extra-dep: true
 
 image:

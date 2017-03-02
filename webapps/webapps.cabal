@@ -32,3 +32,4 @@ executable webapps
                      , wai-extra
                      , lucid
                      , gitrev
+                     , warp-letsencrypt
