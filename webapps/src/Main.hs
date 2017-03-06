@@ -19,7 +19,7 @@ import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
                                             waiProxyTo)
 import           Network.HTTP.Types        (status200, status404, status307)
-import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder, isSecure)
+import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder, isSecure, Request)
 import           Network.Wai.Handler.Warp  (setPort, defaultSettings)
 import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
@@ -147,7 +147,7 @@ runProxy proxyPort proxyPortSSL cfg = do
             Index -> WPRResponse $ responseBuilder
                 status200
                 [("Content-Type", "text/html; charset=utf-8")]
-                (runIdentity $ execHtmlT $ indexHtml cfg)
+                (runIdentity $ execHtmlT $ indexHtml req cfg)
     defRes = WPRResponse $ responseLBS status404 [] "Host not found"
 
     getLocation host req = S.concat
@@ -166,8 +166,8 @@ runProxy proxyPort proxyPortSSL cfg = do
 
     middleware = gzip def
 
-indexHtml :: Config a -> Html ()
-indexHtml cfg =
+indexHtml :: Request -> Config a -> Html ()
+indexHtml req cfg =
     doctypehtml_ $ do
         head_ $ do
             title_ $ toHtml $ configTitle cfg
@@ -190,7 +190,7 @@ indexHtml cfg =
                 ul_ $ do
                   forM_ (configApps cfg) $ \app -> do
                     let url = T.pack $ concat
-                            [ "http://"
+                            [ if isSecure req then "https://" else "http://"
                             , appVhost app
                             , "/"
                             ]
