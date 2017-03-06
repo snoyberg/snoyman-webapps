@@ -171,16 +171,24 @@ indexHtml cfg =
     doctypehtml_ $ do
         head_ $ do
             title_ $ toHtml $ configTitle cfg
+            link_
+              [ rel_ "stylesheet"
+              , href_ "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+              ]
         body_ $ do
-            h1_ $ toHtml $ configTitle cfg
-            p_ $ do
+            div_ [class_ "jumbotron"] $ div_ [class_ "container"] $ do
+              h1_ $ toHtml $ configTitle cfg
+              p_ $ do
                 "Git SHA: "
                 b_ $gitHash
                 when $gitDirty $ do
                     " "
                     i_ "dirty"
-            ul_ $ do
-                forM_ (configApps cfg) $ \app -> do
+            div_ [class_ "container"] $ div_ [class_ "row"] $ do
+              div_ [class_ "col-md-2"] $ return ()
+              div_ [class_ "col-md-8"] $ do
+                ul_ $ do
+                  forM_ (configApps cfg) $ \app -> do
                     let url = T.pack $ concat
                             [ "http://"
                             , appVhost app
