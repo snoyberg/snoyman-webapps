@@ -19,7 +19,7 @@ import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
                                             waiProxyTo)
 import           Network.HTTP.Types        (status200, status404, status307)
-import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder)
+import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder, isSecure)
 import           Network.Wai.Handler.Warp  (setPort, defaultSettings)
 import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
@@ -151,7 +151,7 @@ runProxy proxyPort proxyPortSSL cfg = do
     defRes = WPRResponse $ responseLBS status404 [] "Host not found"
 
     getLocation host req = S.concat
-        [ "http://"
+        [ if isSecure req then "https://" else "http://"
         , host
         , rawPathInfo req
         , rawQueryString req
@@ -192,7 +192,6 @@ runWebApp :: [(String, String)] -> App Int -> IO ()
 runWebApp env0 App {..} = do
     (Nothing, Nothing, Nothing, ph) <- createProcess (proc appExe appArgs)
         { env = Just $ ("PORT", show appPort)
-                     : ("APPROOT", "http://" ++ appVhost)
                      : env0
         , cwd = Just appDir
         }
