@@ -7,6 +7,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main (main) where
 
+import           Control.Exception         (assert)
+import           Control.Exception.Safe    (tryAny)
 import           Control.Monad             (when)
 import           Control.Concurrent        (threadDelay)
 import qualified Data.HashMap.Strict       as HM
@@ -20,7 +22,7 @@ import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             waiProxyTo)
 import           Network.HTTP.Types        (status200, status404, status307)
 import           Network.Wai               (requestHeaderHost, responseLBS, rawPathInfo, rawQueryString, responseBuilder, isSecure, Request)
-import           Network.Wai.Handler.Warp  (setPort, defaultSettings)
+import           Network.Wai.Handler.Warp  (setPort, defaultSettings, run)
 import           Network.Wai.Middleware.Gzip (gzip, def)
 import           Text.Read                 (readMaybe)
 import Data.Aeson (FromJSON (..), (.:), withObject)
@@ -33,7 +35,6 @@ import System.Environment (getEnvironment)
 import System.Process (createProcess, proc, env, cwd, waitForProcess)
 import qualified Data.ByteString as S
 import Lucid
-import Lucid.Html5
 import Data.Functor.Identity (runIdentity)
 import Control.Monad (forM_)
 import Warp.LetsEncrypt
@@ -74,8 +75,8 @@ instance port ~ () => FromJSON (App port) where
         <*> o .: "desc"
 
 data Redirect = Redirect
-    { redSrc :: !String
-    , redDst :: !String
+    { _redSrc :: !String
+    , _redDst :: !String
     }
     deriving Show
 instance FromJSON Redirect where
@@ -121,7 +122,7 @@ runProxy :: Int -> Int -> Config Int -> IO ()
 runProxy proxyPort proxyPortSSL cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
-    runLetsEncrypt LetsEncryptSettings
+    eres <- tryAny $ runLetsEncrypt LetsEncryptSettings
       { lesInsecureSettings = setPort proxyPort defaultSettings
       , lesSecureSettings = setPort proxyPortSSL defaultSettings
       , lesEmailAddress = "michael@snoyman.com"
@@ -129,6 +130,11 @@ runProxy proxyPort proxyPortSSL cfg = do
       , lesApp = middleware $ app manager
       , lesBeforeSecure = threadDelay $ 1000 * 1000 * 30 -- thirty seconds to make Kube happy with the new deployment
       }
+    case eres of
+      Left e -> do
+        putStrLn $ "runLetsEncrypt exited with: " ++ show e
+        run proxyPort $ middleware $ app manager
+      Right () -> assert False $ return ()
   where
     vhosts = HM.insert (T.encodeUtf8 $ T.pack $ configIndexVhost cfg) Index
            $ HM.fromList $ map toPair (configApps cfg)

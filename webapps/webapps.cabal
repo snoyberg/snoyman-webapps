@@ -33,3 +33,4 @@ executable webapps
                      , lucid
                      , gitrev
                      , warp-letsencrypt
+                     , safe-exceptions
