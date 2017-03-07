@@ -122,7 +122,11 @@ runProxy :: Int -> Int -> Config Int -> IO ()
 runProxy proxyPort proxyPortSSL cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
-    eres <- tryAny $ runLetsEncrypt LetsEncryptSettings
+    eres <- tryAny $ runLetsEncrypt
+      ConsulSettings
+      { consulPrefix = "snoyman-webapps-lets-encrypt"
+      }
+      LetsEncryptSettings
       { lesInsecureSettings = setPort proxyPort defaultSettings
       , lesSecureSettings = setPort proxyPortSSL defaultSettings
       , lesEmailAddress = "michael@snoyman.com"
