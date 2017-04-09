@@ -10,10 +10,6 @@ packages:
 - sites/yesodweb.com
 - location: vendor/gitrev
   extra-dep: true
-- location:
-    git: https://github.com/snoyberg/warp-letsencrypt
-    commit: d08f68dcad8121654b7ac998bee2a8d0053f6150
-  extra-dep: true
 
 image:
   container:

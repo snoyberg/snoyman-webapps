@@ -37,7 +37,6 @@ import qualified Data.ByteString as S
 import Lucid
 import Data.Functor.Identity (runIdentity)
 import Control.Monad (forM_)
-import Warp.LetsEncrypt
 
 data Config port = Config
     { configApps :: ![App port]
@@ -122,23 +121,7 @@ runProxy :: Int -> Int -> Config Int -> IO ()
 runProxy proxyPort proxyPortSSL cfg = do
     manager <- newManager defaultManagerSettings
     putStrLn $ "Listening on: " ++ show proxyPort
-    eres <- tryAny $ runLetsEncrypt
-      ConsulSettings
-      { consulPrefix = "snoyman-webapps-lets-encrypt"
-      }
-      LetsEncryptSettings
-      { lesInsecureSettings = setPort proxyPort defaultSettings
-      , lesSecureSettings = setPort proxyPortSSL defaultSettings
-      , lesEmailAddress = "michael@snoyman.com"
-      , lesDomains = configDomains cfg
-      , lesApp = middleware $ app manager
-      , lesBeforeSecure = threadDelay $ 1000 * 1000 * 30 -- thirty seconds to make Kube happy with the new deployment
-      }
-    case eres of
-      Left e -> do
-        putStrLn $ "runLetsEncrypt exited with: " ++ show e
-        run proxyPort $ middleware $ app manager
-      Right () -> assert False $ return ()
+    run proxyPort $ middleware $ app manager
   where
     vhosts = HM.insert (T.encodeUtf8 $ T.pack $ configIndexVhost cfg) Index
            $ HM.fromList $ map toPair (configApps cfg)
