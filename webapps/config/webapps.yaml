@@ -62,3 +62,7 @@ redirects:
   dst: www.snoyman.com
 - src: whosawthatcoming.com
   dst: www.whosawthatcoming.com
+- src: snoyberg.com
+  dst: www.snoyman.com
+- src: www.snoyberg.com
+  dst: www.snoyman.com
