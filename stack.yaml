@@ -2,11 +2,7 @@ resolver: lts-6.30
 
 packages:
 - webapps
-- sites/dollarversusshekel
-- sites/haskellers
-- sites/luach
 - sites/snoyman.com
-- sites/whosawthatcoming
 - sites/yesodweb.com
 - location: vendor/gitrev
   extra-dep: true
@@ -18,16 +14,5 @@ image:
     add:
       sites/yesodweb.com/config: /app/yesodweb.com/config
       sites/yesodweb.com/static: /app/yesodweb.com/static
-
-      sites/haskellers/config: /app/haskellers/config
-      sites/haskellers/static: /app/haskellers/static
-
-      sites/whosawthatcoming/config: /app/whosawthatcoming/config
-      sites/whosawthatcoming/static: /app/whosawthatcoming/static
-
-      sites/luach/static: /app/luach/static
-
-      sites/whosawthatcoming/config: /app/whosawthatcoming/config
-      sites/whosawthatcoming/static: /app/whosawthatcoming/static
 
       webapps/config: /app/webapps/config
