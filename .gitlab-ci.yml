@@ -1,9 +1,11 @@
-image: registry.gitlab.fpcomplete.com/fpco/default-build-image:17
+image: registry.gitlab.fpcomplete.com/fpco/default-build-image:1954
 
 cache:
   key: "$CI_BUILD_NAME"
   paths:
     - .stack-work/
+    - sites/snoyman.com/.stack-work/
+    - sites/yesodweb.com/.stack-work/
     - .stack-root/
     - etc/docker/_artifacts/
 
