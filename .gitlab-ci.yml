@@ -36,23 +36,25 @@ build:
     - docker tag snoyberg/snoyman-webapps "${DEPLOYMENT_IMAGE}"
     - docker login -u gitlab-ci-token -p "${CI_BUILD_TOKEN}" "${CI_REGISTRY}"
     - docker push "${DEPLOYMENT_IMAGE}"
+    - |
+      if [[ "$CI_BUILD_REF_NAME" == "master" ]]; then
+        docker tag "${DEPLOYMENT_IMAGE}" "${CI_REGISTRY_IMAGE}:latest"
+        docker push "${CI_REGISTRY_IMAGE}:latest"
+      fi
 
-deploy:
+deploy_v2:
   stage: deploy
   only:
     - master
-#  environment:
-#    name: fpcomplete-site-prod
-#    url: https://www.fpcomplete.com/
   variables:
     DEPLOYMENT_NAME: "snoyman-webapps"
     PROD_DEPLOYMENT_IMAGE: "snoyberg/snoyman-webapps:${CI_BUILD_REF_SLUG}_${CI_PIPELINE_ID}"
   script:
     - export
-      KUBE_CA_PEM="$PROD_KUBE_CA_PEM"
-      KUBE_URL="$PROD_KUBE_URL"
-      KUBE_TOKEN="$PROD_KUBE_TOKEN"
-      KUBE_NAMESPACE="$PROD_KUBE_NAMESPACE"
+      KUBE_CA_PEM="$PROD_V2_KUBE_CA_PEM"
+      KUBE_URL="$PROD_V2_KUBE_URL"
+      KUBE_TOKEN="$PROD_V2_KUBE_TOKEN"
+      KUBE_NAMESPACE="$PROD_V2_KUBE_NAMESPACE"
     - *KUBELOGIN
     - docker login -u "$PROD_DOCKER_USERNAME" -p "${PROD_DOCKER_PASSWORD}"
     - docker tag "$DEPLOYMENT_IMAGE" "$PROD_DEPLOYMENT_IMAGE"
