@@ -13,9 +13,10 @@ import           Control.Monad             (when)
 import           Control.Concurrent        (threadDelay)
 import qualified Data.HashMap.Strict       as HM
 import           Data.Maybe                (fromMaybe)
+import           Data.String               (fromString)
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
-import           Development.GitRev        (gitHash, gitDirty)
+import           GitHash
 import           Network.HTTP.Client       (defaultManagerSettings, newManager)
 import           Network.HTTP.ReverseProxy (ProxyDest (..),
                                             WaiProxyResponse (..), defaultOnExc,
@@ -171,10 +172,11 @@ indexHtml req cfg =
         body_ $ do
             div_ [class_ "jumbotron"] $ div_ [class_ "container"] $ do
               h1_ $ toHtml $ configTitle cfg
+              let gi = $$tGitInfoCwd
               p_ $ do
                 "Git SHA: "
-                b_ $gitHash
-                when $gitDirty $ do
+                b_ (fromString (giHash gi))
+                when (giDirty gi) $ do
                     " "
                     i_ "dirty"
             div_ [class_ "container"] $ div_ [class_ "row"] $ do

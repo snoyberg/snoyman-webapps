@@ -31,5 +31,5 @@ executable webapps
                      , http-client
                      , wai-extra
                      , lucid
-                     , gitrev
+                     , githash
                      , safe-exceptions
