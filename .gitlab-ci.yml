@@ -29,8 +29,7 @@ build:
   script:
     # Clear *_TOKEN variables during code build so that libraries compile-time code can't access them
     - git submodule update --init --recursive || git clean -fdx && git submodule update --init --recursive || rm -rf sites && git submodule update --init --recursive
-    - docker build --tag snoyman-webapps-base docker
-    - CI_BUILD_TOKEN="" KUBE_TOKEN="" PROD_KUBE_TOKEN="" PROD_DOCKER_PASSWORD="" stack --install-ghc image container
+    - CI_BUILD_TOKEN="" KUBE_TOKEN="" PROD_KUBE_TOKEN="" PROD_DOCKER_PASSWORD="" docker/build-docker.sh
     - docker tag snoyberg/snoyman-webapps "${DEPLOYMENT_IMAGE}"
     - docker login -u gitlab-ci-token -p "${CI_BUILD_TOKEN}" "${CI_REGISTRY}"
     - docker push "${DEPLOYMENT_IMAGE}"
