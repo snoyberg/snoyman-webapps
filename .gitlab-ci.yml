@@ -1,63 +1,56 @@
-image: registry.gitlab.fpcomplete.com/fpco/default-build-image:7548
-
 cache:
-  key: "$CI_BUILD_NAME"
+  untracked: true
+  key: "$CI_BUILD_REF_NAME"
   paths:
-    - .stack-work/
-    - .stack-root/
-    - etc/docker/_artifacts/
+    - .stack-work
+    - .stack-root
 
 stages:
   - build
+  - release
   - deploy
 
 variables:
-    STACK_ROOT: "${CI_PROJECT_DIR}/.stack-root"
-    DEPLOYMENT_IMAGE: "registry.gitlab.fpcomplete.com/michael/snoyman-webapps:${CI_BUILD_REF_SLUG}_${CI_PIPELINE_ID}"
-    LANG: "C.UTF-8"
+  STACK_ROOT: "${CI_PROJECT_DIR}/.stack-root"
+  LANG: "C.UTF-8"
 
-# This creates anchors for bits of script that are reused between builds
-.anchors:
-  # The KUBE_* variables are set by Gitlab's Kubernetes deployment service
-  - &KUBELOGIN
-    echo "$KUBE_CA_PEM" >"$HOME/ca.pem" &&
-    kubectl config set-cluster cluster --server="$KUBE_URL" --certificate-authority="$HOME/ca.pem" &&
-    kubectl config set-credentials cluster --token="$KUBE_TOKEN" && kubectl config set-context cluster --cluster=cluster --user=cluster --namespace="$KUBE_NAMESPACE" &&
-    kubectl config use-context cluster
+  CONTAINER_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_BUILD_REF_NAME}_${CI_BUILD_REF}
+  CONTAINER_IMAGE_LATEST: ${CI_REGISTRY}/${CI_PROJECT_PATH}:latest
+  DOCKER_DRIVER: overlay2
+
+  KUBECONFIG: /etc/deploy/config
 
 build:
   stage: build
+  image: fpco/stack-build:lts-14.10
   script:
-    # Clear *_TOKEN variables during code build so that libraries compile-time code can't access them
     - git submodule update --init --recursive || git clean -fdx && git submodule update --init --recursive || rm -rf sites && git submodule update --init --recursive
-    - CI_BUILD_TOKEN="" KUBE_TOKEN="" PROD_KUBE_TOKEN="" PROD_DOCKER_PASSWORD="" docker/build-docker.sh
-    - docker tag snoyberg/snoyman-webapps "${DEPLOYMENT_IMAGE}"
-    - docker login -u gitlab-ci-token -p "${CI_BUILD_TOKEN}" "${CI_REGISTRY}"
-    - docker push "${DEPLOYMENT_IMAGE}"
-    - |
-      if [[ "$CI_BUILD_REF_NAME" == "master" ]]; then
-        docker tag "${DEPLOYMENT_IMAGE}" "${CI_REGISTRY_IMAGE}:latest"
-        docker push "${CI_REGISTRY_IMAGE}:latest"
-      fi
+    - rm -rf docker/artifacts
+    - mkdir -p docker/artifacts/app/yesodweb.com docker/artifacts/app/webapps docker/artifacts/bin
+    - stack install --local-bin-path docker/artifacts/bin
+    - cp -r sites/yesodweb.com/config sites/yesodweb.com/static docker/artifacts/app/yesodweb.com
+    - cp -r webapps/config docker/artifacts/app/webapps
+  artifacts:
+    paths:
+     - docker/artifacts
 
-deploy_v2:
+release:
+  stage: release
+  image: docker:latest
+  script:
+    - docker login -u gitlab-ci-token -p ${CI_BUILD_TOKEN} ${CI_REGISTRY}
+    - docker build -t ${CONTAINER_IMAGE} docker
+    - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE_LATEST}
+    - docker push ${CONTAINER_IMAGE}
+    - docker push ${CONTAINER_IMAGE_LATEST}
+
+# FIXME!
+deploy:
   stage: deploy
   only:
     - master
   variables:
     DEPLOYMENT_NAME: "snoyman-webapps"
-    PROD_DEPLOYMENT_IMAGE: "snoyberg/snoyman-webapps:${CI_BUILD_REF_SLUG}_${CI_PIPELINE_ID}"
   script:
-    - export
-      KUBE_CA_PEM="$PROD_V2_KUBE_CA_PEM"
-      KUBE_URL="$PROD_V2_KUBE_URL"
-      KUBE_TOKEN="$PROD_V2_KUBE_TOKEN"
-      KUBE_NAMESPACE="$PROD_V2_KUBE_NAMESPACE"
-    - *KUBELOGIN
-    - docker login -u "$PROD_DOCKER_USERNAME" -p "${PROD_DOCKER_PASSWORD}"
-    - docker tag "$DEPLOYMENT_IMAGE" "$PROD_DEPLOYMENT_IMAGE"
-    - docker push "$PROD_DEPLOYMENT_IMAGE"
-    - docker tag "$DEPLOYMENT_IMAGE" "snoyberg/snoyman-webapps:latest"
-    - docker push "snoyberg/snoyman-webapps:latest"
-    - kubectl set image "deployment/$DEPLOYMENT_NAME" webapps="$PROD_DEPLOYMENT_IMAGE"
+    - kubectl set image "deployment/$DEPLOYMENT_NAME" webapps=${CONTAINER_IMAGE}
     - kubectl rollout status "deployment/$DEPLOYMENT_NAME"
